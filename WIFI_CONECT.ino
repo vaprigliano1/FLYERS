@@ -1,88 +1,75 @@
-#include <ESP8266WiFi.h>
+#include <ESP8266WiFi.h> //INCLUSÃO DA BIBLIOTECA NECESSÁRIA PARA FUNCIONAMENTO DO CÓDIGO
  
-const char* ssid = ""; //Escrever o nome da rede
-const char* password = ""; //senha
- 
+const char* ssid = "XT1097 8373"; //VARIÁVEL QUE ARMAZENA O NOME DA REDE SEM FIO EM QUE VAI CONECTAR
+//const char* password = "senha_da_sua_rede_WIFI"; //VARIÁVEL QUE ARMAZENA A SENHA DA REDE SEM FIO EM QUE VAI CONECTAR
+
 int ldr = 0; //definindo LDR na porta A0 da placa
 int valorldr = 0;//armazenando as infos do LDR
  
 int id = 1; //Identificação de qual conjunto de sensores está sendo enviado aquela informação
-//(Caso você deseje aplicar mais de um conjunto de sensores)
- 
-String myIPAddrStr; //Variável para armazenamento do IP gerado para acesso do Webservice.
-// Se quiser criar um IP fixo (vamos tentar),só precisa descomentar as linhas 14,15,16.
-//IPAddress ip(192,168,72,171); //Alterar aqui para o IP Desejado
-//IPAddress gateway(192,168,72,1); //Gateway da rede
-//IPAddress subnet(255,255,255,0);//Mascara da rede
- 
-WiFiServer server(80); //Definição para o webservice utilizar a porta 80.
- 
+
+WiFiServer server(80); 
 void setup() {
-Serial.begin(9600);
-delay(10);
- 
-// inicia a conexão com a rede
-Serial.println();
-Serial.println();
-Serial.print("ESP8266 Conectando à ");
-Serial.println(ssid);
- 
-WiFi.begin(ssid, password); //Inicia a conexão WiFi
-//WiFi.config(ip, gateway, subnet); //se usar IP fixo, descomentar essa linha
-while (WiFi.status() != WL_CONNECTED) {
-delay(500);
-Serial.print(".");
-}
-Serial.println("Conectado");
-server.begin();
-myIPAddrStr = String(WiFi.localIP().toString());
-Serial.println(WiFi.localIP()); //utilizar o IP gerado aqui.
-}
- 
-void loop() {
-delay(2000);
 valorldr = analogRead(ldr);
+Serial.begin(115200); 
+delay(10); 
+Serial.println(""); //PULA LINHA
+Serial.println(""); 
+Serial.print("Conectando a "); 
+Serial.print(ssid); 
  
-WiFiClient client = server.available(); // Comparação se o cliente Wifi, está disponível
-if (!client) {
-return;
+WiFi.begin(ssid); 
+ 
+while (WiFi.status() != WL_CONNECTED) { 
+delay(500); 
+Serial.print("."); 
 }
+Serial.println(""); 
+Serial.print("Conectado a rede sem fio "); 
+Serial.println(ssid); 
+server.begin(); 
+Serial.println("Servidor iniciado"); 
  
-Serial.println("Webserver gerado.");
-while(!client.available()){
-delay(1);
+Serial.print("IP para se conectar ao NodeMCU: ");
+Serial.print("http://"); 
+Serial.println(WiFi.localIP()); 
 }
-String req = client.readStringUntil('\r');
-Serial.println(req);
-client.flush();
-String url = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<!DOCTYPE HTML>\r\n";
-//Geração da página HTML
-url += "<html>\r\n";
-url += "<title>Monitoramento de Salas de Estudo</title>";
-url += "<center><h1>Acompanhe as salas de estudo:</h1>";
-url += "<br/>";
-url += "<br/>";
-url += "<br/>";
-url += "<b>Sala 1 = </b>"; //adicionar : if luminosidade > x (print:indisponivel)
-url += valorldr;
-url += "<br/>";
-url += "<b>Intens. Sinal = </b> "; 
-url += "<br/>";
-url += "<b>IP = </b>";
-url += String(myIPAddrStr);
-url += "<br/>";
-url += "<input type=""button"" value=""Atualizar"" onClick=""history.go(0)"">" ; //Essa linha gera um botão p/ atualizar a página do webservice.
-url += "<br/>";
-url += "<br/>";
-url += "<br/>";
-url += "<br/>";
-url += "<br/>";
-url += "<br/>";
-url += "<b>Obrigado por usar a V5. Bons Estudos! </b> ";
-url += "</center></html>\n";
-client.print(url);
+void loop() {
+WiFiClient client = server.available(); //VERIFICA SE ALGUM CLIENTE ESTÁ CONECTADO NO SERVIDOR
+if (!client) { 
+return; 
+}
+Serial.println("Novo cliente se conectou!"); 
+while(!client.available()){ 
+delay(1); 
+}
+String request = client.readStringUntil('\r'); //FAZ A LEITURA DA PRIMEIRA LINHA DA REQUISIÇÃO
+Serial.println(request); 
+client.flush(); 
  
-Serial.println();
-Serial.println("Fechando a conexão");
-delay(30000); //Espera 30 segundos e recomeça o loop.
+client.println("HTTP/1.1 200 OK"); //ESCREVE PARA O CLIENTE A VERSÃO DO HTTP
+client.println("Content-Type: text/html"); //ESCREVE PARA O CLIENTE O TIPO DE CONTEÚDO(texto/html)
+client.println("");
+client.println("<!DOCTYPE HTML>"); //INFORMA AO NAVEGADOR A ESPECIFICAÇÃO DO HTML
+client.println("<html>"); //ABRE A TAG "html"
+client.println("<h1><center>V5 SENSORS</center></h1>"); //ESCREVE ALGO NA PÁGINA
+client.println("<center><font size='5'>Verifique as salas a baixo: </center>"); 
+client.println("");
+client.println("");
+client.println("");
+client.println("");
+client.println("");
+client.println("<center><font size='10'>SALA 1:</center>"); 
+client.println("");
+client.println("");
+client.println("");
+client.println("");
+if (valorldr < 200)
+  client.println ("<center><font size='5'>Sala Livre</center>"); // "Sala Dísponivel"
+else
+  client.println ("<center><font size='5'>Sala Ocupada</center>"); // "Sala Ocupada"
+client.println("</html>"); //FECHA A TAG "html"
+delay(1); //INTERVALO DE 1 MILISEGUNDO
+Serial.println("Cliente desconectado"); //ESCREVE O TEXTO NA SERIAL
+Serial.println(""); //PULA UMA LINHA NA JANELA SERIAL
 }
