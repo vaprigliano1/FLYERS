@@ -63,7 +63,7 @@ client.println("");
 client.println("");
 client.println("");
 client.println("");
-if (sensorValue >550)
+if (sensorValue <30  )
   client.println ("<center><font size='5'>Sala Livre</center>"); // Sala Dísponivel pois a luz é menor que 400, supomos que a sala está apagada. 
 else
   client.println ("<center><font size='5'>Sala Ocupada</center>"); // Sala Ocupada pois a uz é maior que 400, assumimos que a luz esta acessa
